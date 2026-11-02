@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Fast Browser",
+  "version": "0.1.0",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsOKeXRXgaawX+9gDPWDJpWET1+abGHGm6pC3dM5N5MtlDMjx7fggkpzwARxEL5jTXzyX+7846mKglctu+R9Xd33c8PeuxcoeJI2zeGIKjG/3os21J1uvbUjtuuxygxYrn5F0vMtsdkZhYIZgfoSDMLTP6wVfsLv8mepCXfSJg9/CiS6nThYow39Y2ttcfVxJLvlSEQ0H2Nfund7q5EcvimkWzKuqYzB4xe5un+IGLK+nVxWrZhyzSGTnrFwdFVdgPM9xtNoIHPnHcdcDbWHFvY8OUypYJOZnXQPgXnHZ3jgJrRZlDlS1QdTQmpQLiy9dQ4md/aCKODg8vnWfURSBUwIDAQAB",
+  "description": "Lets a local Fast Browser MCP server (Claude Code) drive this browser over ws://127.0.0.1.",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "tabs",
+    "scripting",
+    "activeTab",
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Fast Browser",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

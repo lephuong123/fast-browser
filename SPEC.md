@@ -246,3 +246,25 @@ counts (calls per tool, avg ms, failure rate) — this is the benchmark data sou
   (form page, page that navigates on submit, modal, table), driven through the real MCP server over stdio with the MCP
   client SDK. Covers: tabs goto → act batch with navigation mid-way → diff → extract table → workflow
   reset/save/run with a new param → allowlist rejection.
+
+## Amendments after build + review (2026-11-02)
+
+These override the sections above.
+- **Mutual auth on the bridge.** Shared secret in `$FB_HOME/token` (pasted once into the extension popup).
+  `hello` carries `nonce`; server answers `config` with `nonce` + `proof` (HMAC); extension answers `{type:"auth", proof}`;
+  server sends `{type:"ready"}`. Extension ignores config/requests until the server has proved itself.
+  Close codes: 4001 no auth in 10s, 4002 hello without nonce, 4003 bad proof. Only an authenticated connection may
+  replace the current one.
+- **Pinned extension id.** `manifest.json` has a fixed `key` → id `biombhedndgmjlfaklonbecohcobfndd`; the server accepts
+  only that origin by default. `FB_EXTENSION_ID="*"` disables pinning.
+- **Allowlist ceiling** in the popup: the server may narrow the list but never widen it.
+- **Allowlist checked before every step** (url and pendingUrl), plus an in-page `location.hostname` guard before any
+  page call or eval. `tabs.list` shows `(not allowed: host)` without title for other tabs. Loopback (127/8, ::1,
+  *.localhost, 0.0.0.0) needs an explicit entry even with `*`.
+- **Workflow templating** touches only `value`, `waitText`, `text`, `locator.name` and the path/query/hash of `url`
+  — never selector, role, nth, key, waitSelector or scheme/host/port.
+- **Locator** is captured before the action runs. `[value=…]` selectors only for radio/checkbox; password fills drop
+  any `[value=` selector server-side.
+- **page.js** returns `{error}` instead of throwing; `step()` does not wait — the runner calls `waitStable()`.
+  `press Escape` closes a native `<dialog>` (cancel event first). `check` waits up to 500 ms for the state to flip.
+- A tab already in `loading` before a step is not treated as a navigation.

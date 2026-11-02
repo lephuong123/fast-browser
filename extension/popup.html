@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Fast Browser</title>
+<style>
+  body { font: 13px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; width: 260px; color: #1f2328; background: #fff; }
+  h1 { font-size: 14px; margin: 0 0 8px; }
+  .row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #c62828; flex: none; }
+  .dot.connected { background: #2e7d32; }
+  .dot.connecting { background: #c79100; }
+  .muted { color: #59636e; font-size: 12px; word-break: break-word; }
+  input { width: 80px; padding: 3px 4px; }
+  button { padding: 3px 8px; cursor: pointer; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #1e1f22; color: #e6e6e6; }
+    .muted { color: #a0a4a8; }
+  }
+</style>
+</head>
+<body>
+  <h1>Fast Browser</h1>
+  <div class="row"><span id="dot" class="dot"></span><span id="state">…</span></div>
+  <div id="detail" class="muted"></div>
+  <div class="row">
+    <label for="port">Port</label>
+    <input id="port" type="number" min="1" max="65535">
+    <button id="save">Save</button>
+    <button id="reconnect" title="Reconnect now">↻</button>
+  </div>
+  <div class="row">
+    <label for="token">Token</label>
+    <input id="token" type="password" placeholder="paste ~/.fast-browser/token" autocomplete="off" style="width:140px">
+    <button id="saveToken">Pair</button>
+  </div>
+  <div id="paired" class="muted"></div>
+  <div id="domains" class="muted"></div>
+  <div class="row">
+    <label for="ceiling" title="Optional. If set, the server can only narrow this list, never widen it.">Ceiling</label>
+    <input id="ceiling" type="text" placeholder="optional: a.com, b.io" style="width:140px">
+    <button id="saveCeiling">Set</button>
+  </div>
+  <script src="popup.js" type="module"></script>
+</body>
+</html>
