@@ -1,0 +1,11 @@
+{
+  "name": "fast-browser",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "workspaces": ["server", "extension", "e2e"],
+  "scripts": {
+    "test": "npm test -w server && npm test -w extension",
+    "test:e2e": "npm test -w e2e"
+  }
+}

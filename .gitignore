@@ -1,0 +1,4 @@
+node_modules/
+*.log
+test-results/
+.e2e-home/
