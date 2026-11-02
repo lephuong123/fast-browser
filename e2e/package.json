@@ -1,0 +1,8 @@
+{
+  "name": "@fast-browser/e2e",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test --test-concurrency=1 test/" },
+  "devDependencies": { "playwright": "^1.48.0", "@modelcontextprotocol/sdk": "^1.17.0" }
+}
