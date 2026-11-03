@@ -268,3 +268,26 @@ These override the sections above.
 - **page.js** returns `{error}` instead of throwing; `step()` does not wait — the runner calls `waitStable()`.
   `press Escape` closes a native `<dialog>` (cancel event first). `check` waits up to 500 ms for the state to flip.
 - A tab already in `loading` before a step is not treated as a navigation.
+
+## Amendment: several sessions share one extension (2026-11-03)
+
+Overrides "If the port is busy …" in *Transport*.
+- The first server to bind the port is the **primary**; the extension connects to it as before.
+- A server that gets `EADDRINUSE` connects to `ws://127.0.0.1:<port>/peer` as a **peer** and forwards every request
+  through the primary: peer → `{type:"req", id, method, params, timeoutMs}`, primary → `{type:"res", id, ok, result|error}`.
+  The primary runs it as its own request (same extension, own ids). `timeoutMs` is clamped to 1 s…10 min.
+- `/peer` accepts only upgrades **without** an `Origin` header (browsers always send one) and only after a token
+  handshake with prefixes distinct from the extension's: `peer-hello{nonce}` → `peer-config{nonce, proof=HMAC(token,"primary:"+nonce)}`
+  → `peer-auth{proof=HMAC(token,"peer:"+primNonce)}` → `peer-ready`. The peer verifies the primary first, so a foreign
+  process on the port gets nothing. Close codes as for the extension (4001/4002/4003); 4010 = primary shutting down.
+- If the port holder is not a Fast Browser primary (no token, wrong token, no answer within 3 s), start fails and
+  every tool returns `port N in use — … (could not share it: <reason>)`.
+- **Failover:** when a peer loses the primary it retries (100 ms → 2 s backoff) to bind the port, else to re-join
+  whoever did. Requests made meanwhile wait up to max(connectWaitMs, 5 s). The extension reconnects by itself.
+- **Per-session tab** (`tools.js`): the extension's "current tab" is global, so each server remembers its own tab
+  (last `tabs.new` / `tabs.goto` / `tabs.select` result) and sends it as `tabId` on `tabs.goto` and `page.*` when the
+  caller gave none. While the browser is shared (`bridge.shared`: we are a peer, or a primary with peers) and the
+  session has no tab yet, `page.*` without `tabId` is refused and `tabs.goto` without `tabId` becomes `tabs.new`.
+  If the remembered tab was closed by hand the call is retried once without it.
+- Not covered: two sessions passing the same explicit `tabId`; the `recording.json` mirror is shared by all
+  servers in one `FB_HOME` (each keeps its own in-memory recording; the file only seeds the next start).

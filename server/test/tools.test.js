@@ -234,7 +234,10 @@ test('busy port: MCP server still starts and every tool returns the port error',
   const port = blocker.address().port;
   const s = await startApp({ env: { FB_PORT: String(port) }, bridgeOptions: { log: () => {} } });
   try {
-    assert.equal(s.app.bridge.startError, `port ${port} in use — another Fast Browser server is running; close it or set FB_PORT`);
+    assert.match(
+      s.app.bridge.startError,
+      new RegExp(`^port ${port} in use — another Fast Browser server is running; close it or set FB_PORT \\(could not share it: .+\\)$`),
+    );
     const { tools } = await s.client.listTools();
     assert.equal(tools.length, 7);
     for (const [name, args] of [

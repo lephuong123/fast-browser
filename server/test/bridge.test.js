@@ -127,7 +127,7 @@ test('waits briefly for the extension to connect', async () => {
   }
 });
 
-test('busy port: start reports it and every request fails with the FB_PORT hint', async () => {
+test('busy port held by something else: start reports it and every request fails with the FB_PORT hint', async () => {
   const blocker = http.createServer();
   await new Promise((r) => blocker.listen(0, '127.0.0.1', r));
   const port = blocker.address().port;
@@ -135,8 +135,9 @@ test('busy port: start reports it and every request fails with the FB_PORT hint'
   try {
     const r = await bridge.start();
     assert.equal(r.ok, false);
-    const expected = `port ${port} in use — another Fast Browser server is running; close it or set FB_PORT`;
+    const expected = `port ${port} in use — another Fast Browser server is running; close it or set FB_PORT (could not share it: no token configured)`;
     assert.equal(r.error, expected);
+    assert.equal(bridge.role, null);
     await assert.rejects(bridge.request('tabs.list', {}), { message: expected });
   } finally {
     await bridge.close();

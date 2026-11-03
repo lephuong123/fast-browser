@@ -123,6 +123,7 @@ Mỗi ngày in một dòng tổng (số lượt gọi, thời gian trung bình, 
 - Prompt injection: nội dung trang có thể chứa chỉ dẫn nhắm vào AI. Allowlist giới hạn phạm vi, nhưng vẫn nên đọc kỹ trước khi duyệt các hành động nhạy cảm.
 - Workflow lưu dạng plaintext trong `~/.fast-browser/workflows`. Giá trị điền vào ô mật khẩu không bao giờ được ghi xuống đĩa: recording, file workflow và log chỉ chứa `{{password}}` hoặc số ký tự. Locator không dùng thuộc tính `value` của ô nhập liệu (chỉ dùng cho radio/checkbox), và với ô mật khẩu server bỏ hẳn selector có `[value=…]`.
 - Chỉ một extension (đã xác thực) kết nối tại một thời điểm (kết nối đã xác thực mới nhất thắng).
+- Đường `/peer` (cho server của session khác) chỉ nhận kết nối **không có** header `Origin` (trình duyệt luôn gửi, nên trang web không vào được) và phải qua bắt tay HMAC bằng cùng token, với tiền tố khác của extension nên không dùng lại proof được. Peer kiểm tra primary trước, nên tiến trình lạ chiếm cổng không nhận được lệnh nào.
 
 ## Giới hạn của giai đoạn 1
 
@@ -130,7 +131,8 @@ Mỗi ngày in một dòng tổng (số lượt gọi, thời gian trung bình, 
 - Hộp thoại `alert` / `confirm` / `prompt` chặn trang: bước đó bị timeout, cần bấm tay.
 - Chưa tìm phần tử trong iframe và shadow DOM.
 - `browser_eval` bị chặn trên trang có CSP không cho `unsafe-eval`. Khi đó dùng `browser_extract` hoặc `browser_snapshot`.
-- Một cổng chỉ phục vụ một server: Claude Desktop và Claude Code không chạy song song trên cùng cổng. Server thứ hai vẫn khởi động, nhưng mọi tool trả lỗi `port 17890 in use — …`. Khi đó đặt `FB_PORT` khác, và đổi cổng tương ứng trong popup.
+- Nhiều session (nhiều cửa sổ Claude Code, Claude Desktop) dùng chung một extension: server mở trước giữ cổng (primary), server mở sau tự nối vào nó qua `/peer` và chuyển lệnh qua đó. Primary thoát thì một peer tự lên thay, extension tự nối lại. Mỗi session tự nhớ tab của mình; khi đang dùng chung mà session chưa có tab riêng, `browser_snapshot`/`browser_act`/… không kèm `tabId` bị từ chối và `browser_tabs goto` mở tab mới thay vì điều hướng tab của session khác. Hai session cố tình truyền cùng một `tabId` thì vẫn giẫm lên nhau.
+- Nếu cổng bị tiến trình khác (không phải Fast Browser, hoặc khác token) chiếm, mọi tool trả lỗi `port 17890 in use — … (could not share it: …)`. Khi đó đặt `FB_PORT` khác, và đổi cổng tương ứng trong popup.
 - Selector đã ghi có thể hỏng khi web đổi giao diện. Locator được lấy **trước** khi thực hiện hành động (nút đổi tên "Show more" → "Show less" vẫn replay được). Khi replay, tên phần tử được kiểm tra và tự rơi về tìm theo role + tên. Nếu vẫn không thấy, bước đó báo hỏng để sửa.
 - `check` chờ tối đa 500ms để framework (React 18, Vue) cập nhật trạng thái sau sự kiện click trước khi báo lỗi.
 - `press` với phím in được / `Backspace` / `Delete` tôn trọng vùng chọn: `Control+a` rồi gõ phím sẽ thay toàn bộ nội dung.
