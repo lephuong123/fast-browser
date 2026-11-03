@@ -182,8 +182,41 @@ function formatWorkflow(wf) {
   return lines.join('\n');
 }
 
+// Methods that act on one tab and default to the extension's single, global "current tab".
+const TAB_METHODS = new Set(['tabs.goto', 'page.snapshot', 'page.act', 'page.extract', 'page.eval', 'page.screenshot']);
+const TAB_GONE = /^tab \d+ not found/;
+
 export function createToolHandlers({ bridge, workflows, callLog, recordingOn = () => true }) {
-  const req = (method, params, opts) => bridge.request(method, clean(params || {}), opts);
+  // Several sessions can share one extension (bridge.shared). The extension's "current tab" is global, so each
+  // session remembers its own tab (the last one it opened / navigated / selected) and sends it explicitly.
+  let sessionTab = null;
+
+  function track(method, params, r) {
+    if ((method === 'tabs.new' || method === 'tabs.goto' || method === 'tabs.select') && Number.isInteger(r?.tabId)) sessionTab = r.tabId;
+    if (method === 'tabs.close' && (r?.closed ?? params.tabId) === sessionTab) sessionTab = null;
+  }
+
+  async function req(method, params, opts) {
+    const p = clean(params || {});
+    const implicit = TAB_METHODS.has(method) && p.tabId === undefined;
+    if (implicit && sessionTab != null) p.tabId = sessionTab;
+    else if (implicit && bridge.shared) {
+      // No tab of our own yet: the global current tab may belong to another session.
+      if (method !== 'tabs.goto') {
+        throw new ToolInputError('another session is using this browser too — open your own tab first (browser_tabs action=new or goto), or pass tabId');
+      }
+      method = 'tabs.new'; // goto without a tab → open a fresh tab instead of navigating someone else's
+    }
+    try {
+      const r = await bridge.request(method, p, opts);
+      track(method, p, r);
+      return r;
+    } catch (e) {
+      if (!(implicit && p.tabId === sessionTab && sessionTab != null && TAB_GONE.test(e?.message || ''))) throw e;
+      sessionTab = null; // our tab was closed by hand: fall back once to the old default behaviour
+      return req(method, { ...params, tabId: undefined }, opts);
+    }
+  }
 
   const impl = {
     async browser_tabs(args) {
